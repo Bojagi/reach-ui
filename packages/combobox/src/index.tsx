@@ -69,10 +69,11 @@ const CLEAR = "CLEAR";
 // User is typing
 const CHANGE = "CHANGE";
 
-// Initial input value change handler for syncing user state with state machine
-// Prevents initial change from sending the user to the NAVIGATING state
+// Any input change that is not triggered by an actual onChange event.
+// For example an initial value or a controlled value that was changed.
+// Prevents sending the user to the NAVIGATING state
 // https://github.com/reach/reach-ui/issues/464
-const INITIAL_CHANGE = "INITIAL_CHANGE";
+const SIMULATED_CHANGE = "SIMULATED_CHANGE";
 
 // User is navigating w/ the keyboard
 const NAVIGATE = "NAVIGATE";
@@ -106,7 +107,7 @@ const stateChart: StateChart = {
         [BLUR]: IDLE,
         [CLEAR]: IDLE,
         [CHANGE]: SUGGESTING,
-        [INITIAL_CHANGE]: IDLE,
+        [SIMULATED_CHANGE]: IDLE,
         [FOCUS]: SUGGESTING,
         [NAVIGATE]: NAVIGATING,
         [OPEN_WITH_BUTTON]: SUGGESTING,
@@ -159,7 +160,7 @@ const reducer: Reducer = (data: StateData, event: MachineEvent) => {
   const nextState = { ...data, lastEventType: event.type };
   switch (event.type) {
     case CHANGE:
-    case INITIAL_CHANGE:
+    case SIMULATED_CHANGE:
       return {
         ...nextState,
         navigationValue: null,
@@ -427,11 +428,8 @@ export const ComboboxInput = React.forwardRef(function ComboboxInput(
   forwardedRef
 ) {
   // https://github.com/reach/reach-ui/issues/464
-  let { current: initialControlledValue } = React.useRef(controlledValue);
-  let controlledValueChangedRef = React.useRef(false);
-  useUpdateEffect(() => {
-    controlledValueChangedRef.current = true;
-  }, [controlledValue]);
+  // https://github.com/reach/reach-ui/issues/755
+  let inputValueChangedRef = React.useRef(false);
 
   let {
     data: { navigationValue, value, lastEventType },
@@ -470,16 +468,13 @@ export const ComboboxInput = React.forwardRef(function ComboboxInput(
     (value: ComboboxValue) => {
       if (value.trim() === "") {
         transition(CLEAR);
-      } else if (
-        value === initialControlledValue &&
-        !controlledValueChangedRef.current
-      ) {
-        transition(INITIAL_CHANGE, { value });
+      } else if (!inputValueChangedRef.current) {
+        transition(SIMULATED_CHANGE, { value });
       } else {
         transition(CHANGE, { value });
       }
     },
-    [initialControlledValue, transition]
+    [transition]
   );
 
   React.useEffect(() => {
@@ -494,6 +489,9 @@ export const ComboboxInput = React.forwardRef(function ComboboxInput(
     ) {
       handleValueChange(controlledValue!);
     }
+    // After we handled the changed value, we need to make sure the next
+    // controlled change won't trigger a CHANGE event. (instead of a SIMULATED_CHANGE)
+    inputValueChangedRef.current = false;
   }, [controlledValue, handleValueChange, isControlled, value]);
 
   // [*]... and when controlled, we don't trigger handleValueChange as the
@@ -501,6 +499,7 @@ export const ComboboxInput = React.forwardRef(function ComboboxInput(
   // onChange prop
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { value } = event.target;
+    inputValueChangedRef.current = true;
     if (!isControlled) {
       handleValueChange(value);
     }
@@ -626,9 +625,8 @@ export const ComboboxPopover = React.forwardRef(function ComboboxPopover(
   },
   forwardedRef
 ) {
-  const { popoverRef, inputRef, isExpanded, state } = React.useContext(
-    ComboboxContext
-  );
+  const { popoverRef, inputRef, isExpanded, state } =
+    React.useContext(ComboboxContext);
   const ref = useComposedRefs(popoverRef, forwardedRef);
   const handleKeyDown = useKeyDown();
   const handleBlur = useBlur();
@@ -912,13 +910,8 @@ export const ComboboxButton = React.forwardRef(function ComboboxButton(
   { as: Comp = "button", onClick, onKeyDown, ...props },
   forwardedRef
 ) {
-  const {
-    transition,
-    state,
-    buttonRef,
-    listboxId,
-    isExpanded,
-  } = React.useContext(ComboboxContext);
+  const { transition, state, buttonRef, listboxId, isExpanded } =
+    React.useContext(ComboboxContext);
   const ref = useComposedRefs(buttonRef, forwardedRef);
 
   const handleKeyDown = useKeyDown();
@@ -1130,13 +1123,8 @@ function useKeyDown() {
 }
 
 function useBlur() {
-  const {
-    state,
-    transition,
-    popoverRef,
-    inputRef,
-    buttonRef,
-  } = React.useContext(ComboboxContext);
+  const { state, transition, popoverRef, inputRef, buttonRef } =
+    React.useContext(ComboboxContext);
 
   return function handleBlur(event: React.FocusEvent) {
     let popover = popoverRef.current;
@@ -1249,9 +1237,8 @@ export function escapeRegexp(str: string) {
  * @see Docs https://reach.tech/combobox#usecomboboxcontext
  */
 export function useComboboxContext(): ComboboxContextValue {
-  let { isExpanded, comboboxId, data, state } = React.useContext(
-    ComboboxContext
-  );
+  let { isExpanded, comboboxId, data, state } =
+    React.useContext(ComboboxContext);
   let { navigationValue } = data;
   return React.useMemo(
     () => ({
@@ -1331,7 +1318,7 @@ type State = "IDLE" | "SUGGESTING" | "NAVIGATING" | "INTERACTING";
 type MachineEventType =
   | "CLEAR"
   | "CHANGE"
-  | "INITIAL_CHANGE"
+  | "SIMULATED_CHANGE"
   | "NAVIGATE"
   | "SELECT_WITH_KEYBOARD"
   | "SELECT_WITH_CLICK"
@@ -1363,7 +1350,7 @@ interface StateData {
 type MachineEvent =
   | { type: "BLUR" }
   | { type: "CHANGE"; value: ComboboxValue }
-  | { type: "INITIAL_CHANGE"; value: ComboboxValue }
+  | { type: "SIMULATED_CHANGE"; value: ComboboxValue }
   | { type: "CLEAR" }
   | { type: "CLOSE_WITH_BUTTON" }
   | { type: "ESCAPE" }
