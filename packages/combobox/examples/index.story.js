@@ -12,5 +12,5 @@ export { Example as WithUsecomboboxcontextHookTS } from "./with-usecomboboxconte
 
 export default {
   title: "Combobox",
-  layout: "padded",
+  parameters: { layout: "padded" },
 };

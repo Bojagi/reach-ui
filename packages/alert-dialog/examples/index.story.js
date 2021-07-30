@@ -3,5 +3,5 @@ export { Example as Basic } from "./basic.example.js";
 
 export default {
   title: "AlertDialog",
-  layout: "padded",
+  parameters: { layout: "padded" },
 };

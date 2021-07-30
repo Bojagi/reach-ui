@@ -5,5 +5,5 @@ export { Example as Controlled } from "./controlled.example.js";
 
 export default {
   title: "Disclosure",
-  layout: "padded",
+  parameters: { layout: "padded" },
 };

@@ -12,5 +12,5 @@ export { Example as WithUseaccordioncontextHookTS } from "./with-useaccordioncon
 
 export default {
   title: "Accordion",
-  layout: "padded",
+  parameters: { layout: "padded" },
 };

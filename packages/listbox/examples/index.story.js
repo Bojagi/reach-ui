@@ -13,5 +13,5 @@ export { Example as WithUselistboxcontextHookTS } from "./with-uselistboxcontext
 
 export default {
   title: "Listbox",
-  layout: "padded",
+  parameters: { layout: "padded" },
 };

@@ -16,5 +16,5 @@ export { Example as WrappersWildTS } from "./wrappers-wild.example.tsx";
 
 export default {
   title: "Tabs",
-  layout: "padded",
+  parameters: { layout: "padded" },
 };

@@ -12,5 +12,5 @@ export { Example as WithTooltip } from "./with-tooltip.example.js";
 
 export default {
   title: "Slider",
-  layout: "padded",
+  parameters: { layout: "padded" },
 };
