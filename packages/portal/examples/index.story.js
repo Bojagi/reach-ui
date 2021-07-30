@@ -3,4 +3,5 @@ export { Example as BasicTS } from "./basic.example.tsx";
 
 export default {
   title: "Portal",
+  layout: "padded",
 };

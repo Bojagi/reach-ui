@@ -5,4 +5,5 @@ export { Example as HiddenTS } from "./hidden.example.tsx";
 
 export default {
   title: "Popover",
+  layout: "padded",
 };

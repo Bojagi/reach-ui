@@ -4,4 +4,5 @@ export { Example as TodoList } from "./todo-list.example.js";
 
 export default {
   title: "ComponentComponent",
+  layout: "padded",
 };
